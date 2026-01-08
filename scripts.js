@@ -383,3 +383,53 @@ function showChat(type) {
     $("#public-chat").style.display = type === "public" ? "block" : "none";
     $("#private-chat").style.display = type === "private" ? "block" : "none";
 }
+function loadJavaConcept(conceptKey) {
+    const container = document.getElementById("java-concept-content");
+
+    if (!container) {
+        console.error("java-concept-content not found");
+        return;
+    }
+
+    const content = javaConceptData[conceptKey];
+
+    if (!content) {
+        container.innerHTML = "<p>No data available for this concept.</p>";
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="concept-view-card">
+            ${content}
+        </div>
+    `;
+}
+function loadJavaConcept(concept) {
+    const contentArea = document.getElementById("java-concept-content");
+
+    if (!contentArea) {
+        console.error("❌ java-concept-content not found");
+        return;
+    }
+
+    const filePath = `concepts/java/${concept}.html`;
+
+    fetch(filePath)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`File not found: ${filePath}`);
+            }
+            return res.text();
+        })
+        .then(html => {
+            contentArea.innerHTML = html;
+        })
+        .catch(err => {
+            console.error(err);
+            contentArea.innerHTML = `
+                <div style="padding:16px;color:red;">
+                    ❌ Content not available for <b>${concept}</b>
+                </div>
+            `;
+        });
+}
