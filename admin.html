@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Java Concepts Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h1 { color: #333; }
+    label, input, textarea { display: block; margin-top: 10px; width: 100%; }
+    button { margin-top: 10px; padding: 10px 15px; cursor: pointer; }
+    .concept { background: #fff; padding: 15px; border-radius: 8px; margin-top: 15px; }
+    .concept h3 { margin: 0; }
+    .concept button { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Java Concepts Admin Panel</h1>
+
+  <form id="concept-form">
+    <input type="hidden" id="concept-id">
+    <label>Title:</label>
+    <input type="text" id="title" required>
+    <label>Theory:</label>
+    <textarea id="theory" required></textarea>
+    <label>Video URLs (comma-separated):</label>
+    <textarea id="videos"></textarea>
+    <label>PDF Link:</label>
+    <input type="text" id="pdf">
+    <button type="submit">Save Concept</button>
+  </form>
+
+  <div id="concepts"></div>
+
+  <script>
+    async function loadConcepts() {
+  const res = await fetch('http://localhost:3888/api/java-concepts');
+      const concepts = await res.json();
+      const container = document.getElementById('concepts');
+      container.innerHTML = '';
+
+      concepts.forEach(c => {
+        const el = document.createElement('div');
+        el.className = 'concept';
+        el.innerHTML = `
+          <h3>${c.title}</h3>
+          <p>${c.theory}</p>
+          <p>Videos: ${JSON.parse(c.video_urls).join(', ')}</p>
+          <p><a href="${c.pdf_link}" target="_blank">Download PDF</a></p>
+          <button onclick='editConcept(${JSON.stringify(c)})'>Edit</button>
+          <button onclick='deleteConcept(${c.id})'>Delete</button>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    async function saveConcept(e) {
+      e.preventDefault();
+      const id = document.getElementById('concept-id').value;
+      const title = document.getElementById('title').value;
+      const theory = document.getElementById('theory').value;
+      const videos = document.getElementById('videos').value.split(',').map(v => v.trim());
+      const pdf = document.getElementById('pdf').value;
+
+      const method = id ? 'PUT' : 'POST';
+  const url = id ? `http://localhost:3888/api/java-concepts/${id}` : 'http://localhost:3888/api/java-concepts';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, theory, video_urls: videos, pdf_link: pdf })
+      });
+      const data = await res.json();
+      alert(data.message);
+      document.getElementById('concept-form').reset();
+      loadConcepts();
+    }
+
+    function editConcept(c) {
+      document.getElementById('concept-id').value = c.id;
+      document.getElementById('title').value = c.title;
+      document.getElementById('theory').value = c.theory;
+      document.getElementById('videos').value = JSON.parse(c.video_urls).join(', ');
+      document.getElementById('pdf').value = c.pdf_link;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deleteConcept(id) {
+      if (!confirm('Are you sure you want to delete this concept?')) return;
+  const res = await fetch(`http://localhost:3888/api/java-concepts/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      alert(data.message);
+      loadConcepts();
+    }
+
+    document.getElementById('concept-form').addEventListener('submit', saveConcept);
+    loadConcepts();
+  </script>
+</body>
+</html>
